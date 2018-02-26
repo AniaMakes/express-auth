@@ -26,6 +26,7 @@ function getUserByUsername(username){
   });
 }
 
+app.set('view engine', 'hbs');
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
 
@@ -81,6 +82,18 @@ app.get('/profile', isLoggedIn, function(req, res){
   // send user info. It should strip password at this stage
   res.json({user:req.user});
 });
+
+app.get("/register", function (req, res){
+  res.render("register", req.body);
+});
+
+app.post("/register", function (req, res){
+  console.log(req.body);
+
+
+})
+
+
 
 app.listen(8080, function() { // Set app to listen for requests on port 3000
   console.log('Listening on port 8080!'); // Output message to indicate server is listening
