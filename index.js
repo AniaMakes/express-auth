@@ -4,6 +4,15 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
 const app = express();
+const pgp = require('pg-promise')();
+
+const db = pgp({
+  host:'localhost',
+  port: 5432,
+  database: process.env.DATABASE,
+  user: process.env.USERNAME,
+  password: process.env.PASSWORD
+});
 
 // create temporary storage for login data
 const storage = {
@@ -90,8 +99,38 @@ app.get("/register", function (req, res){
 app.post("/register", function (req, res){
   console.log(req.body);
 
+  const {username, password} = req.body;
 
-})
+  db.one(`INSERT INTO account(username, password) VALUES($1,$2) RETURNING id`, [username, password])
+  .then(data => {
+    res.json(Object.assign({}, {id:data.id}, req.body));
+  })
+  .catch(error => {
+    res.json({
+      error: error.message
+    });
+  });
+});
+
+app.get("/login", function(req, res){
+  res.render("login", req.body);
+});
+
+app.post("logging-in", function(req, res){
+
+  console.log(req.body);
+  const {username, password} = req.body;
+
+  db.one(`SELECT password FROM account WHERE username = $1 RETURNING password`, [username])
+  .then(function(savedPassword){
+    if (savedPassword == password){
+      res.json(req.body);
+    }
+    else {
+      res.status(405).send('not allowed');
+    }
+  });
+});
 
 
 
