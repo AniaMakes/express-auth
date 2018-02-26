@@ -116,14 +116,14 @@ app.get("/login", function(req, res){
   res.render("login", req.body);
 });
 
-app.post("logging-in", function(req, res){
+app.post("/logging-in", function(req, res){
 
   console.log(req.body);
-  const {username, password} = req.body;
+  const {username, incomingPassword} = req.body;
 
   db.one(`SELECT password FROM account WHERE username = $1 RETURNING password`, [username])
   .then(function(savedPassword){
-    if (savedPassword == password){
+    if (savedPassword == incomingPassword){
       res.json(req.body);
     }
     else {
