@@ -33,9 +33,24 @@ const db = pgp({
 
 // helper function to get user by username
 function getUserByUsername(username){
-  return Object.values(storage).find( function(user){
-    return user.username === username;
-  });
+  // TODO fetch user details from the database (if the username exists, r)
+    console.log("in getUserByUsername");
+
+    return db.one(`SELECT * FROM account WHERE username =$1`, [username])
+    .then(function(incomingUserObject){
+      console.log(incomingUserObject);
+      if(!incomingUserObject){
+        console.log("Not");
+        return undefined;
+      } else {
+        console.log("yes");
+        return incomingUserObject;
+      }
+    })
+
+  // return Object.values(storage).find( function(user){
+  //   return user.username === username;
+  //});
 }
 
 app.set('view engine', 'hbs');
@@ -56,20 +71,43 @@ passport.serializeUser(function(user, done) {
 
 // deserialise user from session
 passport.deserializeUser(function(id, done) {
-  const user = storage[id];
-  done(null, user);
+  db.one(`SELECT * FROM account WHERE id =$1`, [id])
+  .then (function(user){
+    done(null, user);
+  })
 });
 
 // configure passport to use local strategy
 // that is use locally stored credentials
 passport.use(new LocalStrategy(
   function(username, password, done) {
-    const user = getUserByUsername(username);
-    if (!user) return done(null, false);
-    if (user.password != password) return done(null, false);
-    return done(null, user);
-  }
-));
+    getUserByUsername(username)
+    .then(function(user){
+      console.log("user in passport.use: ", user);
+
+      if (!user) return done(null, false);
+
+      const {username, password} = user;
+      const incomingPassword = password;
+
+        if (incomingPassword == user.password){
+          console.log("password correct");
+          return done(null, user);
+        }
+        else {
+          // res.status(401).send({content:"not allowed"});
+          return done(null, false);
+        }
+      })
+      .catch(function(error){
+        console.log(error);
+        return null;
+      });
+
+      // fetch pw from db and use it to compare as below
+      // if (user.password != password) return done(null, false);
+      // return done(null, user);
+}));
 
 // initialise passport and session
 app.use(passport.initialize());
@@ -85,8 +123,10 @@ function isLoggedIn(req, res, next){
 }
 
 // route to accept logins
-app.post('/login', passport.authenticate('local', { session: true }), function(req, res) {
-  res.redirect('/profile');
+app.post('/logging-in', passport.authenticate('local', { session: true }), function(req, res) {
+  console.log("made it through log in!");
+  console.log(req, res);
+  res.json(req.body);
 });
 
 // route to display user info
@@ -94,6 +134,8 @@ app.get('/profile', isLoggedIn, function(req, res){
   // send user info. It should strip password at this stage
   res.json({user:req.user});
 });
+
+// -------------------------------------------------------------
 
 app.get("/register", function (req, res){
   res.render("register", req.body);
@@ -120,28 +162,28 @@ app.get("/login", function(req, res){
   res.render("login", req.body);
 });
 
-app.post("/logging-in", function(req, res){
-
-  console.log("I'm logging in!", req.body);
-  const {username, password} = req.body;
-  const incomingPassword = password;
-
-  db.one(`SELECT password FROM account WHERE username = $1`, [username])
-  .then(function(savedPassword){
-    if (bcrypt.compareSync(incomingPassword, savedPassword.password)){
-      console.log("password correct");
-      console.log(req.body);
-      res.json(req.body);
-    }
-    else {
-      res.status(401).send({content:"not allowed"});
-    }
-  })
-  .catch(function(error){
-    console.log(error);
-    return null;
-  });
-});
+// app.post("/logging-in", function(req, res){
+//
+//   console.log("I'm logging in!", req.body);
+//   const {username, password} = req.body;
+//   const incomingPassword = password;
+//
+//   db.one(`SELECT password FROM account WHERE username = $1`, [username])
+//   .then(function(savedPassword){
+//     if (bcrypt.compareSync(incomingPassword, savedPassword.password)){
+//       console.log("password correct");
+//       console.log(req.body);
+//       res.json(req.body);
+//     }
+//     else {
+//       res.status(401).send({content:"not allowed"});
+//     }
+//   })
+//   .catch(function(error){
+//     console.log(error);
+//     return null;
+//   });
+// });
 
 
 
