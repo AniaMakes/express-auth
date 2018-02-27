@@ -1,3 +1,6 @@
+
+const bcrypt = require('bcrypt');
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
@@ -15,18 +18,18 @@ const db = pgp({
 });
 
 // create temporary storage for login data
-const storage = {
-  1: {
-    id: 1,
-    username: 'bob',
-    password: 'pass'
-  },
-  2: {
-    id: 2,
-    username: 'top',
-    password: 'secret'
-  }
-};
+// const storage = {
+//   1: {
+//     id: 1,
+//     username: 'bob',
+//     password: 'pass'
+//   },
+//   2: {
+//     id: 2,
+//     username: 'top',
+//     password: 'secret'
+//   }
+// };
 
 // helper function to get user by username
 function getUserByUsername(username){
@@ -98,10 +101,11 @@ app.get("/register", function (req, res){
 
 app.post("/register", function (req, res){
   console.log(req.body);
-
+  let salt = bcrypt.genSaltSync(10);
   const {username, password} = req.body;
+  let hashPw = bcrypt.hashSync(password, salt);
 
-  db.one(`INSERT INTO account(username, password) VALUES($1,$2) RETURNING id`, [username, password])
+  db.one(`INSERT INTO account(username, password) VALUES($1,$2) RETURNING id`, [username, hashPw])
   .then(data => {
     res.json(Object.assign({}, {id:data.id}, req.body));
   })
@@ -124,13 +128,13 @@ app.post("/logging-in", function(req, res){
 
   db.one(`SELECT password FROM account WHERE username = $1`, [username])
   .then(function(savedPassword){
-    if (savedPassword.password == incomingPassword){
+    if (bcrypt.compareSync(incomingPassword, savedPassword.password)){
       console.log("password correct");
       console.log(req.body);
       res.json(req.body);
     }
     else {
-      res.status(405).send('not allowed');
+      res.status(401).send({content:"not allowed"});
     }
   })
   .catch(function(error){

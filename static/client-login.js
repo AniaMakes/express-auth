@@ -32,6 +32,7 @@ function postData(url, data) {
     method: 'POST', // *GET, PUT, DELETE, etc.
   })
   .then( function(response){
+    console.log("then after fetch ", response);
     return response.json();
   });
 }
