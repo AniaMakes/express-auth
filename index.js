@@ -118,17 +118,24 @@ app.get("/login", function(req, res){
 
 app.post("/logging-in", function(req, res){
 
-  console.log(req.body);
-  const {username, incomingPassword} = req.body;
+  console.log("I'm logging in!", req.body);
+  const {username, password} = req.body;
+  const incomingPassword = password;
 
-  db.one(`SELECT password FROM account WHERE username = $1 RETURNING password`, [username])
+  db.one(`SELECT password FROM account WHERE username = $1`, [username])
   .then(function(savedPassword){
-    if (savedPassword == incomingPassword){
+    if (savedPassword.password == incomingPassword){
+      console.log("password correct");
+      console.log(req.body);
       res.json(req.body);
     }
     else {
       res.status(405).send('not allowed');
     }
+  })
+  .catch(function(error){
+    console.log(error);
+    return null;
   });
 });
 

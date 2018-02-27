@@ -6,22 +6,18 @@ function logUserIn(event){
   event.preventDefault();
 
   const username = document.getElementById("profile-name").value;
-
   const pw = document.getElementById("pw").value;
-
   const userData = {
     username : username,
     password : pw
   };
 
-    postData("/logging-in", userData)
-    .then(function(data){
-      console.log(data);
-    })
-    .catch(error => console.error(error));
+  postData("/logging-in", userData)
+  .then(function(data){
+    console.log(data);
+  })
+  .catch(error => console.error(error));
 }
-
-
 
 
 function postData(url, data) {
